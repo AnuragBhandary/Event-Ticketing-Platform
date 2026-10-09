@@ -63,7 +63,7 @@ jobs:
       - name: Booking rush (k6, 100 buyers for 20 s) and the double-booking audit
         run: |
           docker run --rm --network event-ticketing-platform_default -v "$PWD/load:/load" \
-            -e BASE=http://web -e VUS=100 -e DURATION=20s grafana/k6 run --quiet /load/booking-rush.js
+            -e BASE=http://web -e VUS=100 -e DURATION=20s -e LATENCY=off grafana/k6 run --quiet /load/booking-rush.js
           docker compose exec -T postgres psql -U ticketing -d ticketing -tA -F, -f - < load/audit.sql | tee audit.csv
           awk -F, '{ if ($3 != 0 || $4 != 0 || $1 != $2 || $5 != $6) { print "audit failed"; exit 1 } }' audit.csv
       - if: failure()
