@@ -1,0 +1,5 @@
+ seats_booked | seats_in_bookings | seats_sold_twice | booked_seats_without_matching_booking | bookings | paid_orders 
+--------------+-------------------+------------------+---------------------------------------+----------+-------------
+          848 |               848 |                0 |                                     0 |      424 |         424
+(1 row)
+

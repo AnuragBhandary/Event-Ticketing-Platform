@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: ticketing
+  datasource:
+    url: ${TICKETING_DB_URL:jdbc:postgresql://localhost:5436/ticketing}
+    username: ${TICKETING_DB_USER:ticketing}
+    password: ${TICKETING_DB_PASSWORD:ticketing}
+    hikari:
+      maximum-pool-size: ${TICKETING_DB_POOL:20}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  threads:
+    virtual:
+      enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+ticketing:
+  instance-id: ${TICKETING_INSTANCE_ID:local}
+  hold-ttl: ${TICKETING_HOLD_TTL:10m}
+  sweep-interval: 2s
+  max-seats-per-hold: 10
+  jwt:
+    # HS256 signing key; at least 32 bytes. The default is for local development only.
+    secret: ${TICKETING_JWT_SECRET:local-dev-jwt-secret-change-me-0123456789}
+    ttl: 8h
+  payments:
+    # Shared secret the gateway signs webhooks with (HMAC-SHA256 of the raw body).
+    webhook-secret: ${TICKETING_WEBHOOK_SECRET:local-dev-webhook-secret}
+    fake-gateway:
+      enabled: ${TICKETING_FAKE_GATEWAY:true}
+      # Where the fake gateway delivers webhooks; empty means this instance (http://localhost:<port>).
+      webhook-url: ${TICKETING_WEBHOOK_URL:}
+  demo:
+    # Seed an admin and a few events on an empty database (local and docker compose only).
+    enabled: ${TICKETING_DEMO:false}
+    admin-email: admin@example.com
+    admin-password: ${TICKETING_DEMO_ADMIN_PASSWORD:admin-password-change-me}

@@ -1,0 +1,59 @@
+# PostgreSQL, two API instances and nginx (the React app + load balancer) on :8090.
+#   docker compose up -d --build --wait     then open http://localhost:8090
+# Demo admin: admin@example.com / admin-password-change-me (local development only).
+
+x-api: &api
+  build: ./api
+  image: ticketing-api:latest
+  depends_on:
+    postgres: { condition: service_healthy }
+  restart: unless-stopped
+  stop_grace_period: 20s
+
+x-env: &env
+  TICKETING_DB_URL: jdbc:postgresql://postgres:5432/ticketing
+  TICKETING_DB_USER: ticketing
+  TICKETING_DB_PASSWORD: ticketing
+  TICKETING_JWT_SECRET: ${TICKETING_JWT_SECRET:-local-dev-jwt-secret-change-me-0123456789}
+  TICKETING_WEBHOOK_SECRET: ${TICKETING_WEBHOOK_SECRET:-local-dev-webhook-secret}
+  # The fake gateway delivers webhooks through the load balancer, like a real one would.
+  TICKETING_WEBHOOK_URL: http://web/api/payments/webhook
+  TICKETING_HOLD_TTL: ${TICKETING_HOLD_TTL:-10m}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ticketing
+      POSTGRES_PASSWORD: ticketing
+      POSTGRES_DB: ticketing
+    command: ["postgres", "-c", "max_connections=200"]
+    ports: ["5436:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ticketing -d ticketing"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api1:
+    <<: *api
+    environment: { <<: *env, TICKETING_INSTANCE_ID: api1, TICKETING_DEMO: "true" }  # seeds demo data once
+  api2:
+    <<: *api
+    environment: { <<: *env, TICKETING_INSTANCE_ID: api2 }
+    depends_on:
+      api1: { condition: service_healthy }  # api1 runs the migrations first
+
+  web:
+    build: ./web
+    image: ticketing-web:latest
+    volumes: ["./deploy/nginx.conf:/etc/nginx/nginx.conf:ro"]
+    ports: ["8090:80"]
+    depends_on:
+      api1: { condition: service_healthy }
+      api2: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  pgdata:
