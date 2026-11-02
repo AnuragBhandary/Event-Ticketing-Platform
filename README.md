@@ -115,5 +115,5 @@ web/src/      pages, components (SeatMap), live/ (useLiveSeats, version merge), 
 web/e2e/      Playwright
 load/         k6 booking rush, audit.sql, results/
 deploy/       nginx.conf
-docs/         DESIGN.md, BENCHMARKS.md, INTERVIEW.md
+docs/         DESIGN.md, BENCHMARKS.md
 ```
